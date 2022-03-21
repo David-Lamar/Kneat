@@ -9,7 +9,6 @@ import com.david.lamar.kneat.util.reporting.StdOutReporter
 import kotlinx.coroutines.runBlocking
 import kotlin.math.pow
 
-
 val configuration = Configuration(
     terminationCriterion = TerminationCriterion(
         fitnessAggregationFunction = Aggregation.Max,
@@ -91,18 +90,6 @@ fun main() {
         val xOrInputs = listOf(listOf(0f, 0f), listOf(0f, 1f), listOf(1f, 0f), listOf(1f, 1f))
         val xOrOutputs = listOf(listOf(0f), listOf(1f), listOf(1f), listOf(0f))
 
-        /*
-        xor_inputs = [(0.0, 0.0), (0.0, 1.0), (1.0, 0.0), (1.0, 1.0)]
-        xor_outputs = [   (0.0,),     (1.0,),     (1.0,),     (0.0,)]
-
-        for genome_id, genome in genomes:
-            genome.fitness = 4.0
-            net = neat.nn.FeedForwardNetwork.create(genome, config)
-            for xi, xo in zip(xor_inputs, xor_outputs):
-                output = net.activate(xi)
-                genome.fitness -= (output[0] - xo[0]) ** 2
-         */
-
         Pipeline
             .withConfiguration(configuration)
             .withReporter(StdOutReporter())
@@ -118,7 +105,4 @@ fun main() {
             }
             .start()
     }
-
-
-
 }
