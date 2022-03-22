@@ -3,14 +3,16 @@ package com.david.lamar.kneat.genome.genes.attributes
 import com.david.lamar.kneat.configuration.GenomeConfiguration
 
 /**
- * Class that denotes an attribute that can be managed by a [com.david.lamar.kneat.genes.Gene]. All attributes must
- * share a common configuration defined in [GenomeConfiguration.AttributeConfiguration].
+ * Class that denotes an attribute that can be managed by a [com.david.lamar.kneat.genome.genes.Gene]. All attributes
+ * must share a common configuration defined in [GenomeConfiguration.AttributeConfiguration].
+ *
+ * @param config The [GenomeConfiguration.AttributeConfiguration] used to configure this Attribute
  */
 abstract class Attribute<T, C : GenomeConfiguration.AttributeConfiguration<T>>(protected val config: C) {
 
     /**
      * The current value of the attribute. Setting is protected so that the attribute cannot be mutated outside
-     * of the scope of itself.
+     * of the scope of itself to promote immutability
      *
      * Abstract so that the default / initial value is enforced to be defined by the implementor
      */
