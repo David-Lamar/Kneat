@@ -12,7 +12,6 @@ import com.david.lamar.kneat.genome.network.Connection
 import com.david.lamar.kneat.genome.network.Node
 import com.david.lamar.kneat.util.*
 import com.david.lamar.kneat.util.reporting.Reporter
-import com.david.lamar.kneat.util.reporting.report
 import kotlin.random.Random
 
 open class Genome(

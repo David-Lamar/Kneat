@@ -3,8 +3,8 @@ package com.david.lamar.kneat.evolution.stagnation
 import com.david.lamar.kneat.configuration.StagnationConfiguration
 import com.david.lamar.kneat.evolution.species.Species
 import com.david.lamar.kneat.util.SPECIES_EXTINCTION_MESSAGE
+import com.david.lamar.kneat.util.report
 import com.david.lamar.kneat.util.reporting.Reporter
-import com.david.lamar.kneat.util.reporting.report
 
 class KneatStagnationScheme : StagnationScheme {
     override suspend fun killOffStagnant(

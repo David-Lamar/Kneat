@@ -10,8 +10,8 @@ import com.david.lamar.kneat.evolution.stagnation.KneatStagnationScheme
 import com.david.lamar.kneat.evolution.stagnation.StagnationScheme
 import com.david.lamar.kneat.genome.EvaluationFunction
 import com.david.lamar.kneat.genome.Genome
+import com.david.lamar.kneat.util.report
 import com.david.lamar.kneat.util.reporting.Reporter
-import com.david.lamar.kneat.util.reporting.report
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

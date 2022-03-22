@@ -5,8 +5,8 @@ import com.david.lamar.kneat.configuration.ReproductionConfiguration
 import com.david.lamar.kneat.evolution.species.Species
 import com.david.lamar.kneat.genome.Genome
 import com.david.lamar.kneat.genome.network.Aggregation
+import com.david.lamar.kneat.util.report
 import com.david.lamar.kneat.util.reporting.Reporter
-import com.david.lamar.kneat.util.reporting.report
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.max
