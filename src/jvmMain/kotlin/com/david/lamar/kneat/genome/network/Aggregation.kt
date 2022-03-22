@@ -6,10 +6,20 @@ import kotlin.math.max
 import kotlin.math.pow
 import kotlin.math.sqrt
 
+/**
+ * A function used by a [Node] in a neural network to combine all of its inputs into one value to pass
+ * into its activation function.
+ */
 interface Aggregation {
 
+    /**
+     * Aggregates a list of floats and returns a single value
+     */
     fun aggregate(list: List<Float>) : Float
 
+    /**
+     * Returns all of the values of a list multiplied together
+     */
     object Product : Aggregation {
         override fun aggregate(list: List<Float>) : Float {
             return list.reduce { accumulator, value ->
@@ -18,6 +28,9 @@ interface Aggregation {
         }
     }
 
+    /**
+     * Returns all of the values of a list summed together
+     */
     object Sum : Aggregation {
         override fun aggregate(list: List<Float>): Float {
             return list.reduce { accumulator, value ->
@@ -26,6 +39,9 @@ interface Aggregation {
         }
     }
 
+    /**
+     * Returns the maximum value in the list of values
+     */
     object Max : Aggregation {
         override fun aggregate(list: List<Float>): Float {
             return list.reduce { accumulator, value ->
@@ -34,6 +50,9 @@ interface Aggregation {
         }
     }
 
+    /**
+     * Returns the minimum value in the list of values
+     */
     object Min : Aggregation {
         override fun aggregate(list: List<Float>): Float {
             return list.reduce { accumulator, value ->
@@ -42,6 +61,9 @@ interface Aggregation {
         }
     }
 
+    /**
+     * Returns the maximum value in the list of values where negatives are turned positive
+     */
     object MaxAbsoluteValue : Aggregation {
         override fun aggregate(list: List<Float>): Float {
             return list.reduce { accumulator, value ->
@@ -50,6 +72,9 @@ interface Aggregation {
         }
     }
 
+    /**
+     * Returns the median value of the list
+     */
     object Median : Aggregation {
         override fun aggregate(list: List<Float>): Float {
             val sorted = list.sorted()
@@ -62,12 +87,18 @@ interface Aggregation {
         }
     }
 
+    /**
+     * Returns the mean, or average, of the list
+     */
     object Mean : Aggregation {
         override fun aggregate(list: List<Float>): Float {
             return list.average().toFloat()
         }
     }
 
+    /**
+     * Returns the variance of the list of values
+     */
     object Variance : Aggregation {
         override fun aggregate(list: List<Float>): Float {
             val mean = Mean.aggregate(list)
@@ -78,6 +109,9 @@ interface Aggregation {
         }
     }
 
+    /**
+     * Returns the standard deviation of the list of values
+     */
     object StandardDeviation : Aggregation {
         override fun aggregate(list: List<Float>): Float {
             return sqrt(Variance.aggregate(list))
