@@ -1,12 +1,14 @@
 package com.david.lamar.kneat.genome.genes.attributes
 
-import com.david.lamar.kneat.genome.network.Activation
 import com.david.lamar.kneat.configuration.GenomeConfiguration.ActivationConfiguration
+import com.david.lamar.kneat.genome.network.Activation
 import kotlin.random.Random
 
 /**
- * A custom [Attribute] that manages the activation function of a [com.david.lamar.kneat.network.Node]. May be
- * configured via [com.david.lamar.kneat.configuration.Configuration.GenomeConfiguration.ActivationConfiguration].
+ * A custom [Attribute] that manages the activation function of a [com.david.lamar.kneat.genome.network.Node]. May be
+ * configured via [com.david.lamar.kneat.configuration.GenomeConfiguration.ActivationConfiguration].
+ *
+ * @param config The [ActivationConfiguration] used to configure this attribute
  */
 class ActivationAttribute(config: ActivationConfiguration) : Attribute<Activation, ActivationConfiguration>(config) {
 
