@@ -47,9 +47,9 @@ class ConnectionGene(
      * The distance between these two values is .6; so that is the "distance" between these two values
      * 2. Add "1" if the enabled states are different
      *
-     * @return absolute difference between weights + 1 if the enabled states differ
+     * *Note*: If any other gene is passed in than a [ConnectionGene], you will get errors via the [getAs] function
      *
-     * Note: If any other gene is passed in than a [ConnectionGene], you will get errors via the [getAs] function
+     * @return absolute difference between weights + 1 if the enabled states differ
      */
     override fun distance(other: Gene): Float {
         val myWeight = managedAttributes.getAs<FloatAttribute>(WEIGHT_GENE)
@@ -64,9 +64,6 @@ class ConnectionGene(
         return delta
     }
 
-    /**
-     * Copy method to allow for immutable "updates" to the Gene
-     */
     override fun copy(
         attributes: Map<String, Attribute<out Any, out GenomeConfiguration.AttributeConfiguration<out Any>>>
     ): Gene {
