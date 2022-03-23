@@ -7,6 +7,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
 
+/**
+ * An implementation of a [Network]
+ */
 class KneatNetwork(
     private val inputKeys: List<Long>,
     private val outputKeys: List<Long>,
@@ -18,9 +21,19 @@ class KneatNetwork(
         context = SupervisorJob() + Dispatchers.IO
     )
 
+    /**
+     * The flows to be used as the "input" to the neural network
+     */
     private lateinit var initialFlows: Map<Long, MutableStateFlow<Float>>
+
+    /**
+     * The flow used to represent the "output" of the neural network
+     */
     private lateinit var outputFlow: StateFlow<List<Float>>
 
+    /**
+     * Handles creating the links between all of the nodes and connections
+     */
     private suspend fun initialize() {
         val outputs = connections.groupBy { it.id.second }
         outputs.forEach { (nodeId, connectionsTo) ->
@@ -52,6 +65,9 @@ class KneatNetwork(
         }.stateIn(networkScope)
     }
 
+    /**
+     * See [Network.activate]
+     */
     override suspend fun activate(inputs: List<Float>, stabilizationDelay: Long): List<Float> = withContext(networkScope.coroutineContext) {
         initialFlows = inputKeys.map {
             it to MutableStateFlow(inputs[inputKeys.indexOf(it)])
@@ -76,6 +92,9 @@ class KneatNetwork(
     }
 
     companion object {
+        /**
+         * Creates a KneatNetwork with the provided [genome]
+         */
         fun create(genome: Genome) : Network {
             return KneatNetwork(
                 genome.inputKeys,

@@ -1,13 +1,15 @@
 plugins {
     kotlin("multiplatform") version "1.4.0"
+    id("org.jetbrains.dokka") version "1.6.10"
+}
+
+repositories {
+    mavenCentral()
 }
 
 group = "com.david.lamar"
 version = "1.0.0-SNAPSHOT"
 
-repositories {
-    mavenCentral()
-}
 
 kotlin {
     jvm {
@@ -34,6 +36,17 @@ kotlin {
             dependencies {
                 implementation(kotlin("test-junit"))
             }
+        }
+    }
+}
+
+tasks.withType<org.jetbrains.dokka.gradle.DokkaTask>().configureEach {
+    outputDirectory.set(buildDir.resolve("dokka"))
+
+    dokkaSourceSets {
+        configureEach {
+            includeNonPublic.set(true)
+            reportUndocumented.set(true)
         }
     }
 }

@@ -3,6 +3,9 @@ package com.david.lamar.kneat.util.reporting
 import com.david.lamar.kneat.Pipeline
 import com.david.lamar.kneat.genome.Genome
 
+/**
+ * An implementation of a [Reporter] that prints the updates into the JVM console
+ */
 class StdOutReporter : Reporter {
     override fun info(info: String) {
         println("[INFO]: $info")

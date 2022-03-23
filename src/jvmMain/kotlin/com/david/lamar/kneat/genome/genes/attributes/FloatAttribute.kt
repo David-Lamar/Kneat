@@ -6,9 +6,25 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
 
+/**
+ * A custom [Attribute] that manages a float value; primarily used within
+ * [com.david.lamar.kneat.genome.genes.ConnectionGene] and
+ * [com.david.lamar.kneat.genome.genes.NodeGene] to manage different modifiers associated with
+ * the action potential of a neuron.May be configured via a
+ * [com.david.lamar.kneat.configuration.GenomeConfiguration.FloatConfiguration].
+ *
+ * @param config The [FloatConfiguration] used to configure this attribute
+ */
 class FloatAttribute(config: FloatConfiguration) : Attribute<Float, FloatConfiguration>(config) {
 
+    /**
+     * The minimum value this attribute can contain; defaults to [Float.MIN_VALUE]
+     */
     private var min: Float = config.minValue ?: Float.MIN_VALUE
+
+    /**
+     * The maximum value this attribute can contain; defaults to [Float.MAX_VALUE]
+     */
     private var max: Float = config.maxValue ?: Float.MAX_VALUE
 
     override var value: Float = calculateInitialValue()
@@ -27,6 +43,9 @@ class FloatAttribute(config: FloatConfiguration) : Attribute<Float, FloatConfigu
         return value
     }
 
+    /**
+     * Calculates the initial value this attribute should have based on the [config] values provided
+     */
     private fun calculateInitialValue() : Float {
         val default = config.default
         val standardDev = config.initialStandardDeviation
@@ -36,6 +55,9 @@ class FloatAttribute(config: FloatConfiguration) : Attribute<Float, FloatConfigu
         return default ?: getRandomValue(type = type, stdDev = standardDev, mean = meanValue)
     }
 
+    /**
+     * Generates a random number using one of the different [MultiplierType] provided via [type]
+     */
     private fun getRandomValue(type: MultiplierType, stdDev: Float, mean: Float) : Float {
         return when(type) {
             MultiplierType.GAUSSIAN, MultiplierType.NORMAL -> {
@@ -52,6 +74,9 @@ class FloatAttribute(config: FloatConfiguration) : Attribute<Float, FloatConfigu
         }
     }
 
+    /**
+     * Normalizes the value of this attribute between its [min] and [max]
+     */
     private fun clamp(value: Float): Float {
         return max(min(value, max), min)
     }
