@@ -167,6 +167,9 @@ to add it.
 - Explore adding HyperNEAT capability
 - Distributed learning for systems to learn individually and contribute to the whole
 - Allow configuration of refractory periods for neurons like biological networks
+- Support publishing to maven
+- Support a CI/CD Pipeline
+- Add tests for all files (Ideally 100% tested if possible)
 
 
 

@@ -1,11 +1,20 @@
 package examples
 
-import com.david.lamar.kneat.Pipeline
-import com.david.lamar.kneat.configuration.*
-import com.david.lamar.kneat.genome.network.Activation
-import com.david.lamar.kneat.genome.network.Aggregation
-import com.david.lamar.kneat.genome.network.KneatNetwork
-import com.david.lamar.kneat.util.reporting.StdOutReporter
+import kneat.Pipeline
+import kneat.evolution.configuration.Configuration
+import kneat.evolution.configuration.TerminationCriterion
+import kneat.evolution.genome.CompatibilityConfiguration
+import kneat.evolution.genome.GenomeConfiguration
+import kneat.evolution.genome.genes.attributes.configuration.*
+import kneat.evolution.genome.genes.configuration.ConnectionConfiguration
+import kneat.evolution.genome.genes.configuration.ConnectionType
+import kneat.evolution.genome.genes.configuration.NodeConfiguration
+import kneat.evolution.network.Activation
+import kneat.evolution.network.Aggregation
+import kneat.evolution.network.KneatNetwork
+import kneat.evolution.reproduction.ReproductionConfiguration
+import kneat.evolution.stagnation.StagnationConfiguration
+import kneat.util.reporting.StdOutReporter
 import kotlinx.coroutines.runBlocking
 import kotlin.math.pow
 
@@ -15,17 +24,17 @@ val configuration = Configuration(
         fitnessThreshold = 3.9f
     ),
     genomeConfiguration = GenomeConfiguration(
-        activationConfig = GenomeConfiguration.ActivationConfiguration(
+        activationConfig = ActivationConfiguration(
             default = Activation.Sigmoid,
             available = listOf(Activation.Sigmoid),
             mutationRate = 0f
         ),
-        aggregationConfiguration = GenomeConfiguration.AggregationConfiguration(
+        aggregationConfiguration = AggregationConfiguration(
             default = Aggregation.Sum,
             available = listOf(Aggregation.Sum),
             mutationRate = 0f
         ),
-        biasConfiguration = GenomeConfiguration.BiasConfiguration(
+        biasConfiguration = BiasConfiguration(
             initialMean = 0f,
             initialStandardDeviation = 1f,
             maxValue = 30f,
@@ -34,26 +43,26 @@ val configuration = Configuration(
             mutationRate = .7f,
             replaceRate = .1f
         ),
-        compatibilityConfiguration = GenomeConfiguration.CompatibilityConfiguration(
+        compatibilityConfiguration = CompatibilityConfiguration(
             disjointCoefficient = 1f,
             weightCoefficient = .5f,
             threshold = 3f
         ),
-        connectionConfiguration = GenomeConfiguration.ConnectionConfiguration(
-            initialConnection = GenomeConfiguration.ConnectionConfiguration.ConnectionType.FullSelection.All,
+        connectionConfiguration = ConnectionConfiguration(
+            initialConnection = ConnectionType.FullSelection.All,
             allowRecurrence = false,
             additionProbability = .5f,
             deletionProbability = .5f,
             mutationRate = .001f,
             replaceRate = 0f
         ),
-        nodeConfiguration = GenomeConfiguration.NodeConfiguration(
+        nodeConfiguration = NodeConfiguration(
             inputs = 2,
             outputs = 1,
             additionProbability = .2f,
             deletionProbability = .2f
         ),
-        responseConfiguration = GenomeConfiguration.ResponseConfiguration(
+        responseConfiguration = ResponseConfiguration(
             initialMean = 1f,
             initialStandardDeviation = 0f,
             maxValue = 30f,
@@ -62,7 +71,7 @@ val configuration = Configuration(
             mutationRate = 0f,
             replaceRate = 0f
         ),
-        weightConfiguration = GenomeConfiguration.WeightConfiguration(
+        weightConfiguration = WeightConfiguration(
             initialMean = 0f,
             initialStandardDeviation = 1f,
             maxValue = 30f,
@@ -81,8 +90,7 @@ val configuration = Configuration(
         elitism = 2,
         maxStagnationGeneration = 20,
         fitnessAggregationFunction = Aggregation.Max
-    ),
-    resetOnExtinction = false
+    )
 )
 
 fun main() {
