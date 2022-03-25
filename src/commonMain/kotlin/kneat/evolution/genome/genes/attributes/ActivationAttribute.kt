@@ -38,7 +38,7 @@ class ActivationAttribute(config: ActivationConfiguration) : Attribute<Activatio
     override fun equals(other: Any?): Boolean {
         if (other !is ActivationAttribute) return false
 
-        if (other.value.javaClass == this.value.javaClass) return true
+        if (other.value == this.value) return true
 
         return false
     }

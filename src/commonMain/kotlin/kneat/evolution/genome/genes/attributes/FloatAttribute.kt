@@ -1,9 +1,10 @@
 package kneat.evolution.genome.genes.attributes
 
-import kneat.evolution.genome.genes.attributes.configuration.FloatConfiguration
 import kneat.evolution.genome.genes.ConnectionGene
 import kneat.evolution.genome.genes.NodeGene
+import kneat.evolution.genome.genes.attributes.configuration.FloatConfiguration
 import kneat.util.MultiplierType
+import kneat.util.nextGaussian
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
@@ -33,8 +34,7 @@ class FloatAttribute(config: FloatConfiguration) : Attribute<Float, FloatConfigu
         val rand = Random.nextFloat()
 
         if (rand < config.mutationRate) {
-            val gaussRand = java.util.Random().nextGaussian()
-            val gauss = (gaussRand * config.mutatePower).toFloat()
+            val gauss = (Random.nextGaussian() * config.mutatePower)
             value = clamp(value + gauss)
         } else if (rand > config.replaceRate + config.mutationRate) {
             value = calculateInitialValue()
@@ -61,8 +61,7 @@ class FloatAttribute(config: FloatConfiguration) : Attribute<Float, FloatConfigu
     private fun getRandomValue(type: MultiplierType, stdDev: Float, mean: Float) : Float {
         return when(type) {
             MultiplierType.GAUSSIAN, MultiplierType.NORMAL -> {
-                val rand = java.util.Random().nextGaussian()
-                clamp((rand * stdDev + mean).toFloat())
+                clamp((Random.nextGaussian() * stdDev + mean))
             }
             MultiplierType.UNIFORM -> {
                 val uniMin = mean - (2f * stdDev)

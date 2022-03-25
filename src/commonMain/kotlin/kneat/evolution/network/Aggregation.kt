@@ -1,10 +1,6 @@
 package kneat.evolution.network
 
-import java.lang.Float.min
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.pow
-import kotlin.math.sqrt
+import kotlin.math.*
 
 /**
  * A function used by a [Node] in a neural network to combine all of its inputs into one value to pass
@@ -15,7 +11,7 @@ interface Aggregation {
     /**
      * Aggregates a list of floats and returns a single value
      */
-    fun aggregate(list: List<Float>) : Float
+    fun aggregate(list: List<Float>): Float
 
     /**
      * Returns all of the values of a list multiplied together

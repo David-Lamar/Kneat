@@ -1,6 +1,6 @@
 package kneat.util
 
-import kneat.evolution.genome.genes.attributes.FloatAttribute
+//import kneat.evolution.genome.genes.attributes.FloatAttribute
 import kneat.util.MultiplierType.GAUSSIAN
 import kneat.util.MultiplierType.NORMAL
 

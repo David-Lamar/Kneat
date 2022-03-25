@@ -1,16 +1,17 @@
 package kneat.util.reporting
 
-import kneat.Pipeline
+import kneat.PipelineState
+import kneat.PipelineStateCallback
 
 /**
  * Provides a way for a developer to get information about the solution being generated while
  * execution is happening. For larger networks and problem domains, it's good to have periodic updates
  * to know that your solution is still being worked on even though it may be taking a long time.
  *
- * Aside from the additional functions you see here, it also has tie-ins to the [Pipeline.PipelineState] of
+ * Aside from the additional functions you see here, it also has tie-ins to the [PipelineState] of
  * the currently executing pipeline.
  */
-interface Reporter : Pipeline.PipelineStateCallback {
+interface Reporter : PipelineStateCallback {
 
     /**
      * Reports general info about the solution being generated as it progresses

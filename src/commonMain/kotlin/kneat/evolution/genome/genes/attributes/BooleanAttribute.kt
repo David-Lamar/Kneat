@@ -1,7 +1,7 @@
 package kneat.evolution.genome.genes.attributes
 
-import kneat.evolution.genome.genes.attributes.configuration.BooleanConfiguration
 import kneat.evolution.genome.genes.ConnectionGene
+import kneat.evolution.genome.genes.attributes.configuration.BooleanConfiguration
 import kotlin.random.Random
 
 /**

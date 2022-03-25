@@ -19,6 +19,6 @@ import kneat.evolution.network.Aggregation
 data class StagnationConfiguration(
     val elitism: Int = 0,
     val improvementThreshold: Float = 0f,
-    val fitnessAggregationFunction: Aggregation = Aggregation.Mean,
+    val fitnessAggregationFunction: Aggregation,
     val maxStagnationGeneration: Int = 15
 )

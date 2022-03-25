@@ -1,6 +1,6 @@
 package kneat.evolution.configuration
 
-import kneat.evolution.genome.GenomeConfiguration
+import kneat.evolution.genome.configuration.GenomeConfiguration
 import kneat.evolution.reproduction.ReproductionConfiguration
 import kneat.evolution.stagnation.StagnationConfiguration
 

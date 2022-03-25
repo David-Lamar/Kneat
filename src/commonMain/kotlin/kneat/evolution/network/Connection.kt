@@ -33,7 +33,7 @@ class Connection(
     // should be configurable in the Configuration. When this is changed, please update
     // the documentation in Network
     private val connectionScope: CoroutineScope = CoroutineScope(
-        context = SupervisorJob() + Dispatchers.IO
+        context = SupervisorJob() + Dispatchers.Unconfined
     )
 
     /**

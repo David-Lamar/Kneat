@@ -1,4 +1,4 @@
-package kneat.evolution.genome
+package kneat.evolution.genome.configuration
 
 import kneat.evolution.genome.genes.Gene
 import kneat.evolution.species.SpeciationScheme

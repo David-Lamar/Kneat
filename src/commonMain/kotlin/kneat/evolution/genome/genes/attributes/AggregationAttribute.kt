@@ -40,7 +40,7 @@ class AggregationAttribute(config: AggregationConfiguration) : Attribute<Aggrega
     override fun equals(other: Any?): Boolean {
         if (other !is AggregationAttribute) return false
 
-        if (other.value.javaClass == this.value.javaClass) return true
+        if (other.value == this.value) return true
 
         return false
     }

@@ -1,7 +1,7 @@
 package kneat.evolution.reproduction
 
 import kneat.evolution.genome.Genome
-import kneat.evolution.genome.GenomeConfiguration
+import kneat.evolution.genome.configuration.GenomeConfiguration
 import kneat.evolution.species.Species
 import kneat.util.reporting.Reporter
 

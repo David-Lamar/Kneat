@@ -15,7 +15,6 @@ import kotlin.math.*
  * TODO: Add more activations; this is only a small subset of the ones listed [here](https://en.wikipedia.org/wiki/Activation_function)
  */
 interface Activation {
-
     /**
      * Takes in an [action] and emits a [Float] value
      */

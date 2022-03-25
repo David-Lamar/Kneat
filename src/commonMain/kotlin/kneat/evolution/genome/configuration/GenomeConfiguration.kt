@@ -1,4 +1,4 @@
-package kneat.evolution.genome
+package kneat.evolution.genome.configuration
 
 import kneat.evolution.genome.genes.attributes.configuration.*
 import kneat.evolution.genome.genes.configuration.ConnectionConfiguration

@@ -1,4 +1,4 @@
-package kneat.evolution.genome
+package kneat.evolution.genome.configuration
 
 /**
  * Used to configure aspects about the structure of the genome

@@ -1,6 +1,5 @@
 package kneat.evolution.species
 
-import kneat.evolution.genome.CompatibilityConfiguration
 import kneat.evolution.genome.Genome
 import kneat.evolution.network.Aggregation
 import kneat.util.reporting.Reporter

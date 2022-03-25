@@ -1,7 +1,7 @@
 package kneat.evolution.genome.genes.attributes
 
-import kneat.evolution.genome.genes.attributes.configuration.AttributeConfiguration
 import kneat.evolution.genome.genes.Gene
+import kneat.evolution.genome.genes.attributes.configuration.AttributeConfiguration
 
 /**
  * Class that denotes an attribute that can be managed by a [Gene]. All attributes

@@ -1,7 +1,7 @@
 package kneat.util
 
-import kneat.evolution.genome.genes.configuration.ConnectionConfiguration
-import kneat.evolution.genome.genes.configuration.NodeConfiguration
+//import kneat.evolution.genome.genes.configuration.ConnectionConfiguration
+//import kneat.evolution.genome.genes.configuration.NodeConfiguration
 
 /**
  * String resource file so that all messages for the pipeline are stored in one place. This will allow

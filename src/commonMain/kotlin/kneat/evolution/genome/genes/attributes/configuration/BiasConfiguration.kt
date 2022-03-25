@@ -1,11 +1,11 @@
 package kneat.evolution.genome.genes.attributes.configuration
 
-import kneat.util.MultiplierType
 import kneat.evolution.network.Node
+import kneat.util.MultiplierType
 
 /**
- * Used to configure the Response value used in a [Node]. For more information
- * about how Response affects a node, see [Node].
+ * Used to configure the Bias value used in a [Node]. For more information
+ * about how Bias affects a node, see [Node].
  *
  * @property default see [AttributeConfiguration]
  * @property mutationRate see [AttributeConfiguration]
@@ -17,10 +17,10 @@ import kneat.evolution.network.Node
  * @property maxValue see [FloatConfiguration]
  * @property minValue see [FloatConfiguration]
  */
-data class ResponseConfiguration(
+data class BiasConfiguration(
     override val default: Float? = null,
-    override val mutationRate: Float,
     override val replaceRate: Float,
+    override val mutationRate: Float,
     override val initialMean: Float,
     override val initialStandardDeviation: Float,
     override val multiplierType: MultiplierType = MultiplierType.GAUSSIAN,
