@@ -15,8 +15,8 @@ class KneatStagnationScheme : StagnationScheme {
         species.forEach { it.adjustStagnation(generation, config) }
 
         val groupedStagnant = species
-            .sortedBy { it.currentFitness }
-            .groupBy { it.isStagnant }
+            .sortedBy { it.getCurrentFitness() }
+            .groupBy { it.isStagnant() }
 
         val stagnant = groupedStagnant.getOrDefault(false, emptyList())
         val kept = stagnant.takeLast(config.elitism)

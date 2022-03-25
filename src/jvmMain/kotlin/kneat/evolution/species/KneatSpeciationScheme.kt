@@ -2,7 +2,6 @@ package kneat.evolution.species
 
 import kneat.evolution.genome.Genome
 import kneat.evolution.network.Aggregation
-import kneat.evolution.species.Species.Companion.update
 import kneat.util.mapParallel
 import kneat.util.reporting.Reporter
 import kotlinx.coroutines.CoroutineScope
@@ -40,7 +39,7 @@ open class KneatSpeciationScheme : SpeciationScheme {
 
                 if (distance < compatibilityThreshold) {
                     foundFamily = true
-                    speciesMap[representative.second.key] = (speciesMap[representative.second.key] ?: emptyList()) + currentIndividual
+                    speciesMap[representative.second.id] = (speciesMap[representative.second.id] ?: emptyList()) + currentIndividual
                     return@rep
                 }
             }
@@ -54,10 +53,10 @@ open class KneatSpeciationScheme : SpeciationScheme {
 
         return@withContext newReps.mapNotNull { rep ->
             val speciesKey = rep.first
-            val members = (speciesMap[rep.second.key] ?: emptyList()) + rep.second
+            val members = (speciesMap[rep.second.id] ?: emptyList()) + rep.second
 
             if (speciesKey == null) {
-                Species(
+                KneatSpecies(
                     key = maxSpeciesIndex++,
                     createdIn = generation,
                     fitnessAggregationFunction = fitnessAggregationFunction,

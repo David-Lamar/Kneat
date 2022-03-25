@@ -1,7 +1,8 @@
 package kneat.evolution.reproduction
 
 import kneat.evolution.genome.Genome
-import kneat.evolution.genome.GenomeConfiguration
+import kneat.evolution.genome.KneatGenome
+import kneat.evolution.genome.configuration.GenomeConfiguration
 import kneat.evolution.network.Aggregation
 import kneat.evolution.species.Species
 import kneat.util.report
@@ -19,10 +20,10 @@ open class KneatReproductionScheme : ReproductionScheme {
         config: GenomeConfiguration,
         amount: Int,
         reporters: MutableList<Reporter>
-    ) : List<Genome> {
+    ) : List<KneatGenome> {
         return (1L..amount).map {
-            Genome(
-                key = it,
+            KneatGenome(
+                id = it,
                 config = config,
                 specifiedReporters = reporters
             )
@@ -81,13 +82,13 @@ open class KneatReproductionScheme : ReproductionScheme {
                 )
 
                 val fittest = members.takeLast(reproductionCutoff)
-                var genomeIndex = newPopulation.maxOf { it.key } + 1
+                var genomeIndex = newPopulation.maxOf { it.id } + 1
                 for (i in 1..spawn) {
                     val parent1 = fittest.random()
                     val parent2 = fittest.random()
 
                     val newId = genomeIndex++
-                    val child = Genome.createFromCrossover(
+                    val child = KneatGenome.createFromCrossover(
                         newId,
                         parent1,
                         parent2
@@ -95,7 +96,7 @@ open class KneatReproductionScheme : ReproductionScheme {
                     child.mutate()
 
                     newPopulation.add(child)
-                    ancestors[newId] = Pair(parent1.key, parent2.key)
+                    ancestors[newId] = Pair(parent1.id, parent2.id)
                 }
             }
         }

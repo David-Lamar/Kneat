@@ -1,6 +1,6 @@
 package kneat.util.reporting
 
-import kneat.Pipeline
+import kneat.PipelineState
 import kneat.evolution.genome.Genome
 
 /**
@@ -32,7 +32,7 @@ class StdOutReporter : Reporter {
     }
 
     override fun onEvaluating(genome: Genome) {
-        println("Evaluating genome: ${genome.key}...")
+        println("Evaluating genome: ${genome.id}...")
     }
 
     override fun onEvaluated() {
@@ -68,14 +68,14 @@ class StdOutReporter : Reporter {
     }
 
     override fun onSolutionFound(fittest: Genome?) {
-        println("Solution found with Genome: ${fittest?.key}")
+        println("Solution found with Genome: ${fittest?.id}")
     }
 
-    override fun onPaused(willResumeState: Pipeline.PipelineState) {
+    override fun onPaused(willResumeState: PipelineState) {
         println("Evolution paused")
     }
 
-    override fun onSaving(wilLResumeState: Pipeline.PipelineState) {
+    override fun onSaving(wilLResumeState: PipelineState) {
         println("Saving pipeline state...")
     }
 
