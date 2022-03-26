@@ -11,13 +11,10 @@ import kneat.evolution.network.Node
  * selected
  * @property mutationRate see [AttributeConfiguration]
  * @property available The list of available [Aggregation] functions that we may pull from for this node to use
- * during mutation. Defaulted to all provided aggregation functions; see [Aggregation]
+ * during mutation. Defaulted to [Aggregation.Mean] as it is a good, general purpose starting point
  */
 data class AggregationConfiguration(
     override val default: Aggregation? = null,
     override val mutationRate: Float = 0f,
-    val available: List<Aggregation> = listOf(
-        Aggregation.Max, Aggregation.MaxAbsoluteValue, Aggregation.Mean, Aggregation.Median,
-        Aggregation.Min, Aggregation.Product, Aggregation.Sum, Aggregation.Variance, Aggregation.StandardDeviation
-    ),
+    val available: List<Aggregation> = listOf(Aggregation.Mean)
 ) : AttributeConfiguration<Aggregation>()

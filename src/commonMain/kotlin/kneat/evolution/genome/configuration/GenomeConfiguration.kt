@@ -21,7 +21,7 @@ data class GenomeConfiguration(
     val activationConfig: ActivationConfiguration,
     val aggregationConfiguration: AggregationConfiguration,
     val biasConfiguration: BiasConfiguration,
-    val responseConfiguration: ResponseConfiguration,
+    val responseConfiguration: ResponseConfiguration = ResponseConfiguration(),
     val weightConfiguration: WeightConfiguration,
     val compatibilityConfiguration: CompatibilityConfiguration,
     val connectionConfiguration: ConnectionConfiguration,
