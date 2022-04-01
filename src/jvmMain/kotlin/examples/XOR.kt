@@ -1,31 +1,30 @@
 package examples
 
-import com.david.lamar.kneat.Pipeline
-import com.david.lamar.kneat.configuration.*
-import com.david.lamar.kneat.genome.network.Activation
-import com.david.lamar.kneat.genome.network.Aggregation
-import com.david.lamar.kneat.genome.network.KneatNetwork
-import com.david.lamar.kneat.util.reporting.StdOutReporter
+import kneat.Pipeline
+import kneat.evolution.configuration.Configuration
+import kneat.evolution.configuration.TerminationCriterion
+import kneat.evolution.genome.configuration.CompatibilityConfiguration
+import kneat.evolution.genome.configuration.GenomeConfiguration
+import kneat.evolution.genome.genes.attributes.configuration.BiasConfiguration
+import kneat.evolution.genome.genes.attributes.configuration.WeightConfiguration
+import kneat.evolution.genome.genes.configuration.ConnectionConfiguration
+import kneat.evolution.genome.genes.configuration.ConnectionType
+import kneat.evolution.genome.genes.configuration.NodeConfiguration
+import kneat.evolution.network.Aggregation
+import kneat.evolution.network.KneatNetwork
+import kneat.evolution.reproduction.ReproductionConfiguration
+import kneat.evolution.stagnation.StagnationConfiguration
+import kneat.util.reporting.StdOutReporter
 import kotlinx.coroutines.runBlocking
 import kotlin.math.pow
+import kotlin.time.ExperimentalTime
 
-val configuration = Configuration(
+val xorConfiguration = Configuration(
     terminationCriterion = TerminationCriterion(
-        fitnessAggregationFunction = Aggregation.Max,
         fitnessThreshold = 3.9f
     ),
     genomeConfiguration = GenomeConfiguration(
-        activationConfig = GenomeConfiguration.ActivationConfiguration(
-            default = Activation.Sigmoid,
-            available = listOf(Activation.Sigmoid),
-            mutationRate = 0f
-        ),
-        aggregationConfiguration = GenomeConfiguration.AggregationConfiguration(
-            default = Aggregation.Sum,
-            available = listOf(Aggregation.Sum),
-            mutationRate = 0f
-        ),
-        biasConfiguration = GenomeConfiguration.BiasConfiguration(
+        biasConfiguration = BiasConfiguration(
             initialMean = 0f,
             initialStandardDeviation = 1f,
             maxValue = 30f,
@@ -34,35 +33,27 @@ val configuration = Configuration(
             mutationRate = .7f,
             replaceRate = .1f
         ),
-        compatibilityConfiguration = GenomeConfiguration.CompatibilityConfiguration(
+        compatibilityConfiguration = CompatibilityConfiguration(
             disjointCoefficient = 1f,
             weightCoefficient = .5f,
-            threshold = 3f
+            threshold = 2f
         ),
-        connectionConfiguration = GenomeConfiguration.ConnectionConfiguration(
-            initialConnection = GenomeConfiguration.ConnectionConfiguration.ConnectionType.FullSelection.All,
-            allowRecurrence = false,
+        connectionConfiguration = ConnectionConfiguration(
+            default = true,
+            initialConnection = ConnectionType.FullSelection.All,
+            mutationRate = .01f,
+            replaceRate = 0f,
             additionProbability = .5f,
             deletionProbability = .5f,
-            mutationRate = .001f,
-            replaceRate = 0f
+            allowRecurrence = false
         ),
-        nodeConfiguration = GenomeConfiguration.NodeConfiguration(
+        nodeConfiguration = NodeConfiguration(
             inputs = 2,
             outputs = 1,
             additionProbability = .2f,
             deletionProbability = .2f
         ),
-        responseConfiguration = GenomeConfiguration.ResponseConfiguration(
-            initialMean = 1f,
-            initialStandardDeviation = 0f,
-            maxValue = 30f,
-            minValue = -30f,
-            mutatePower = 0f,
-            mutationRate = 0f,
-            replaceRate = 0f
-        ),
-        weightConfiguration = GenomeConfiguration.WeightConfiguration(
+        weightConfiguration = WeightConfiguration(
             initialMean = 0f,
             initialStandardDeviation = 1f,
             maxValue = 30f,
@@ -79,27 +70,32 @@ val configuration = Configuration(
     ),
     stagnationConfiguration = StagnationConfiguration(
         elitism = 2,
-        maxStagnationGeneration = 20,
-        fitnessAggregationFunction = Aggregation.Max
+        maxStagnationGeneration = 5,
+        fitnessAggregationFunction = Aggregation.Max,
+        improvementThreshold = 0f
     ),
     resetOnExtinction = false
 )
 
+@ExperimentalTime
 fun main() {
     runBlocking {
         val xOrInputs = listOf(listOf(0f, 0f), listOf(0f, 1f), listOf(1f, 0f), listOf(1f, 1f))
         val xOrOutputs = listOf(listOf(0f), listOf(1f), listOf(1f), listOf(0f))
 
         Pipeline
-            .withConfiguration(configuration)
+            .withConfiguration(xorConfiguration)
             .withReporter(StdOutReporter())
             .withEvaluationFunction { genome ->
                 var fitness = 4f
+                val network = KneatNetwork.create(genome)
 
                 xOrInputs.zip(xOrOutputs).forEach {
-                    val actualOutput = KneatNetwork.create(genome).activate(it.first, 1)
+                    val actualOutput = network.activate(it.first, 1)
                     fitness -= (actualOutput[0] - it.second[0]).pow(2)
                 }
+
+                (network as KneatNetwork).clean() //TODO: make this not bad
 
                 fitness
             }
