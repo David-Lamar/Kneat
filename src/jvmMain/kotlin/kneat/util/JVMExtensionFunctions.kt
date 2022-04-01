@@ -1,40 +1,41 @@
 package kneat.util
 
 import kneat.evolution.genome.genes.Gene
-import kneat.evolution.network.NetworkElement
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
+import java.lang.Integer.max
 import kotlin.coroutines.coroutineContext
 
 /**
- * Helper function that calculates the distance between two lists of [NetworkElement]s.
+ * Helper function that calculates the distance between two lists of [Gene]s.
  *
  * For more information about how distances are calculated, see the implementation of the
  * specific [Gene] classes used.
  */
-inline fun <reified ID, reified GENE : Gene> List<NetworkElement<ID, GENE>>.distance(
-    to: List<NetworkElement<ID, GENE>>,
+inline fun <reified ID, reified GENE : Gene> List<Pair<ID, GENE>>.distance(
+    to: List<Pair<ID, GENE>>,
     weightCoefficient: Float,
-    disjointCoefficient: Float,
+    disjointCoefficient: Float
 ) : Float {
+    val otherElementMap = to.map { it.first to it.second }.toMap()
     var distance = 0f
-    var equalCount = 0
+    var disjoint = 0
+    var accounted = 0
 
-    forEach { thisElement ->
-        to.forEach inner@ { otherElement ->
-            if (thisElement.id == otherElement.id) {
-                equalCount++
-                distance += thisElement.gene.distance(otherElement.gene) * weightCoefficient
-                return@inner
-            }
+    forEach {
+        val corresponding = otherElementMap[it.first]
+        if (corresponding != null) {
+            distance += it.second.distance(corresponding) * weightCoefficient
+        } else {
+            disjoint++
         }
+        accounted++
     }
 
-    val disjointElements = (size - equalCount) + (to.size - equalCount)
-    distance += disjointElements * disjointCoefficient
-    distance /= Integer.max(size, to.size).toFloat()
-
+    if (accounted < to.size) disjoint += to.size - accounted
+    distance += disjoint * disjointCoefficient
+    distance /= max(size, to.size).toFloat()
     return distance
 }
 

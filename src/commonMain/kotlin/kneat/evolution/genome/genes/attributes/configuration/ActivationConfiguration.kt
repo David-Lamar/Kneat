@@ -1,7 +1,6 @@
 package kneat.evolution.genome.genes.attributes.configuration
 
 import kneat.evolution.network.Activation
-import kneat.evolution.network.Node
 
 /**
  * Used to configure the [Activation] function used by a [Node] via its
@@ -14,7 +13,7 @@ import kneat.evolution.network.Node
  * mutation. Defaulted to [Activation.Sigmoid] as it is a good, general purpose starting point
  */
 data class ActivationConfiguration(
-        override val default: Activation? = null,
+        override val default: Activation? = Activation.Sigmoid,
         override val mutationRate: Float = 0f,
         val available: List<Activation> = listOf(Activation.Sigmoid)
 ) : AttributeConfiguration<Activation>()

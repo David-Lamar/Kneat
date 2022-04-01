@@ -11,6 +11,6 @@ import kneat.evolution.network.Aggregation
  */
 //TODO: These values should be moved into the top level configuration since they're used multiple places and contribute to the pipeline itself
 data class TerminationCriterion(
-    val fitnessAggregationFunction: Aggregation = Aggregation.Mean, // TODO: This and StagnationConfiguration should be the same. Maybe move into a common place
+    val fitnessAggregationFunction: Aggregation = Aggregation.Max, // TODO: This and StagnationConfiguration should be the same. Maybe move into a common place
     val fitnessThreshold: Float
 )

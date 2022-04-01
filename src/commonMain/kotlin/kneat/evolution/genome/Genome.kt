@@ -15,8 +15,7 @@ import kneat.util.reporting.Reporter
 //TODO: Need to finish this so it's not wonky
 abstract class Genome(
     val id: Long,
-    val config: GenomeConfiguration,
-    specifiedReporters: MutableList<Reporter> = mutableListOf()
+    val config: GenomeConfiguration
 ) {
     /**
      * The unique identifiers for the nodes that will act as inputs to the generated neural network.
@@ -37,7 +36,7 @@ abstract class Genome(
     /**
      * Publicly available, unmodifiable list of connections present in this genome
      */
-    abstract val connections: List<Connection>
+    abstract val connections: List<Pair<Pair<Long, Long>, ConnectionGene>>
 
     /**
      * Mutable list of nodes managed by this genome; will directly translate to [Node]s in a
@@ -48,7 +47,7 @@ abstract class Genome(
     /**
      * Publicly available, unmodifiable list of nodes present in this genome
      */
-    abstract val nodes: List<Node>
+    abstract val nodes: List<Pair<Long, NodeGene>>
 
     /**
      * The reporters that wish to be notified of any information provided by the Genome. Defaults
@@ -176,7 +175,7 @@ abstract class Genome(
      *
      * disjointDistance = 3 * [CompatibilityConfiguration.disjointCoefficient]
      */
-    abstract fun distance(other: Genome) : Float
+    abstract suspend fun distance(other: Genome) : Float
 
     /**
      * Returns the size of the Genome which is considered the number of enabled connections + number of non-input nodes

@@ -2,7 +2,7 @@ package kneat.evolution.species
 
 import kneat.evolution.genome.Genome
 import kneat.evolution.network.Aggregation
-import kneat.util.mapParallel
+import kneat.util.report
 import kneat.util.reporting.Reporter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,67 +17,101 @@ open class KneatSpeciationScheme : SpeciationScheme {
 
     override suspend fun speciate(
         compatibilityThreshold: Float,
-        population: List<Genome>,
+        population: Map<Long, List<Genome>>,
         generation: Long,
         fitnessAggregationFunction: Aggregation,
         reporters: MutableList<Reporter>,
         existingSpecies: List<Species>?
     ) : List<Species> = withContext(speciationScope.coroutineContext) {
-        val newReps = existingSpecies?.let { getNewRepresentatives(it, population).toMutableList() } ?: mutableListOf()
+        val newReps = existingSpecies?.let { getNewRepresentatives(it, population, compatibilityThreshold).toMutableList() } ?: mutableListOf()
+        val existingSpeciesIdMap = newReps.map { it.first }
+
+        val changedSpecies = existingSpecies?.filter { !existingSpeciesIdMap.contains(it.key) }
+
+        changedSpecies?.forEach {
+            //TODO: Move this into strings
+            reporters.report().info("Species ${it.key} has changed beyond recognition; a new species will be discovered to take its place")
+        }
+
         val speciesMap: MutableMap<Long, List<Genome>> = mutableMapOf()
+        val unspeciated: MutableList<Genome> = mutableListOf()
+        val repMap = newReps.toMap()
 
-        // TODO: This is expensive but hard to parallelize. Since the new species items need to modify the
-        //  representatives but currently un-indexed items need to reference the representatives, we could get in
-        //  a scenario where an item is determined a new rep, and another item, in parallel, is determined a new
-        //  rep, but really they're in the same "species"
-        val unspeciated = population.filter { genome -> !newReps.any { it.second == genome } }
-        unspeciated.forEach { currentIndividual ->
-            var foundFamily = false
+        // First pass;
+        // Since most individuals generally won't deviate too much from their species, most should already
+        // Be attached to their current rep. We want to avoid new speciation as much as possible
+        // since it can be expensive
+        population.forEach { (existingSpeciesId, genomeList) ->
+            val rep = repMap[existingSpeciesId]
 
-            newReps.forEach rep@ { representative ->
-                val distance = representative.second.distance(currentIndividual)
+            if (rep == null) {
+                unspeciated += genomeList
+            } else {
+                genomeList.filter { it.id != rep.id }.forEach { genome ->
+                    val distance = rep.distance(genome)
 
-                if (distance < compatibilityThreshold) {
-                    foundFamily = true
-                    speciesMap[representative.second.id] = (speciesMap[representative.second.id] ?: emptyList()) + currentIndividual
-                    return@rep
+                    if (distance < compatibilityThreshold) {
+                        speciesMap[rep.id] = (speciesMap[rep.id] ?: emptyList()) + genome
+                    } else {
+                        unspeciated += genome
+                    }
                 }
-            }
-
-            if (!foundFamily) { // New Species!!
-                newReps.add(Pair(null, currentIndividual))
             }
         }
 
         var maxSpeciesIndex = (existingSpecies?.maxOf { it.key } ?: 0) + 1
 
-        return@withContext newReps.mapNotNull { rep ->
-            val speciesKey = rep.first
-            val members = (speciesMap[rep.second.id] ?: emptyList()) + rep.second
+        unspeciated.forEach { currentIndividual ->
+            var foundFamily = false
 
-            if (speciesKey == null) {
+            newReps.forEach rep@ { (speciesId, representative) ->
+                val distance = representative.distance(currentIndividual)
+
+                if (distance < compatibilityThreshold) {
+                    foundFamily = true
+                    speciesMap[speciesId] = (speciesMap[speciesId] ?: emptyList()) + currentIndividual
+                    return@rep
+                }
+            }
+
+            if (!foundFamily) {
+                reporters.report().info("A new species has been discovered!")
+                newReps.add(Pair(maxSpeciesIndex++, currentIndividual))
+            }
+        }
+
+        return@withContext newReps.map {
+            val speciesKey = it.first
+            val spec = existingSpecies?.find { spec -> spec.key == speciesKey }
+            val rep = it.second
+            val members = (speciesMap[speciesKey] ?: emptyList()) + rep
+
+            if (spec == null) {
                 KneatSpecies(
-                    key = maxSpeciesIndex++,
+                    key = speciesKey,
                     createdIn = generation,
                     fitnessAggregationFunction = fitnessAggregationFunction,
-                    representative = rep.second,
+                    representative = rep,
                     members = members.toMutableList()
                 )
             } else {
-                val existing = existingSpecies?.find { spec -> spec.key == speciesKey }
-                existing?.update(rep.second, members)
+                spec.update(
+                    rep,
+                    members
+                )
             }
         }
     }
 
     private suspend fun getNewRepresentatives(
         existingSpecies: List<Species>,
-        population: List<Genome>,
-    ) : List<Pair<Long?, Genome>> {
-        return existingSpecies.mapParallel { species ->
-            var newRepDist = Float.MAX_VALUE
-            var newRep: Genome = population.first()
-            population.forEach { genome ->
+        population: Map<Long, List<Genome>>,
+        compatibilityThreshold: Float
+    ) : List<Pair<Long, Genome>> {
+        return existingSpecies.mapNotNull { species ->
+            var newRepDist = compatibilityThreshold
+            var newRep: Genome? = null
+            (population[species.key] ?: emptyList()).forEach { genome ->
                 val dist = species.representative.distance(genome)
                 if (dist < newRepDist) {
                     newRep = genome
@@ -85,7 +119,8 @@ open class KneatSpeciationScheme : SpeciationScheme {
                 }
             }
 
-            Pair(species.key, newRep)
+            val finalizedRep = newRep
+            if (finalizedRep != null) Pair(species.key, finalizedRep) else null
         }
     }
 }

@@ -4,9 +4,11 @@ import kneat.evolution.genome.genes.NodeGene.Companion.ACTIVATION_GENE
 import kneat.evolution.genome.genes.NodeGene.Companion.AGGREGATION_GENE
 import kneat.evolution.genome.genes.NodeGene.Companion.BIAS_GENE
 import kneat.evolution.genome.genes.NodeGene.Companion.RESPONSE_GENE
-import kneat.evolution.genome.genes.attributes.*
+import kneat.evolution.genome.genes.attributes.ActivationAttribute
+import kneat.evolution.genome.genes.attributes.AggregationAttribute
+import kneat.evolution.genome.genes.attributes.Attribute
+import kneat.evolution.genome.genes.attributes.FloatAttribute
 import kneat.evolution.genome.genes.attributes.configuration.*
-import kneat.evolution.network.Node
 import kneat.evolution.network.Activation
 import kneat.evolution.network.Aggregation
 import kneat.util.getAs
@@ -49,6 +51,11 @@ open class NodeGene(
         AGGREGATION_GENE to AggregationAttribute(aggregationConfiguration)
     )
 
+    fun getBias() = managedAttributes.getAs<FloatAttribute>(BIAS_GENE).value
+    fun getResponse() = managedAttributes.getAs<FloatAttribute>(RESPONSE_GENE).value
+    fun getActivation() = managedAttributes.getAs<ActivationAttribute>(ACTIVATION_GENE).value
+    fun getAggregation() = managedAttributes.getAs<AggregationAttribute>(AGGREGATION_GENE).value
+
     /**
      * # Computes the difference between another [NodeGene], [other].
      *
@@ -75,26 +82,15 @@ open class NodeGene(
      * 1 if the activations differ + 1 if the aggregation functions differ
      */
     override fun distance(other: Gene): Float {
-        managedAttributes.getOrElse(BIAS_GENE) { throw IllegalArgumentException() }
-        val myBias = managedAttributes.getAs<FloatAttribute>(BIAS_GENE)
-        val otherBias = other.managedAttributes.getAs<FloatAttribute>(BIAS_GENE)
+        val nodeGene = other as NodeGene
 
-        val myResponse = managedAttributes.getAs<FloatAttribute>(RESPONSE_GENE)
-        val otherResponse = other.managedAttributes.getAs<FloatAttribute>(RESPONSE_GENE)
+        var delta = abs(getBias() - nodeGene.getBias()) + abs(getResponse() - nodeGene.getResponse())
 
-        val myActivation = managedAttributes.getAs<ActivationAttribute>(ACTIVATION_GENE)
-        val otherActivation = other.managedAttributes.getAs<ActivationAttribute>(ACTIVATION_GENE)
-
-        val myAggregation = managedAttributes.getAs<AggregationAttribute>(AGGREGATION_GENE)
-        val otherAggregation = other.managedAttributes.getAs<AggregationAttribute>(AGGREGATION_GENE)
-
-        var delta = abs(myBias.value - otherBias.value) + abs(myResponse.value - otherResponse.value)
-
-        if (myActivation != otherActivation) {
+        if (getActivation() != nodeGene.getActivation()) {
             delta += 1f
         }
 
-        if (myAggregation != otherAggregation) {
+        if (getAggregation() != nodeGene.getAggregation()) {
             delta += 1f
         }
 

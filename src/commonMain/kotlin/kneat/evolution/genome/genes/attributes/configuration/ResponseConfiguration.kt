@@ -1,6 +1,5 @@
 package kneat.evolution.genome.genes.attributes.configuration
 
-import kneat.evolution.network.Node
 import kneat.util.MultiplierType
 
 /**
@@ -28,7 +27,7 @@ data class ResponseConfiguration(
     override val initialMean: Float = 1f,
     override val initialStandardDeviation: Float = 0f,
     override val multiplierType: MultiplierType = MultiplierType.GAUSSIAN,
-    override val maxValue: Float? = null,
-    override val minValue: Float? = null,
+    override val maxValue: Float? = 30f,
+    override val minValue: Float? = -30f,
     override val mutatePower: Float = 0f
 ) : FloatConfiguration()

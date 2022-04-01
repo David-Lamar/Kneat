@@ -34,7 +34,7 @@ sealed class PipelineState {
          *
          * @property genome The [Genome] currently being evaluated
          */
-        class Evaluating(val genome: Genome) : ExecutionState()
+        class Evaluating(val speciesId: Long, val genome: Genome) : ExecutionState()
 
         /**
          * Signals that we're collecting meta data about the current generation

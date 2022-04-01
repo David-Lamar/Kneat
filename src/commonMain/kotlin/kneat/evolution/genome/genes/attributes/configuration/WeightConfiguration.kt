@@ -1,7 +1,6 @@
 package kneat.evolution.genome.genes.attributes.configuration
 
 import kneat.util.MultiplierType
-import kneat.evolution.network.Connection
 
 /**
  * Used to configure the Weight value used in a [Connection]. For more

@@ -5,7 +5,6 @@ import kneat.evolution.genome.KneatGenome
 import kneat.evolution.genome.configuration.GenomeConfiguration
 import kneat.evolution.network.Aggregation
 import kneat.evolution.species.Species
-import kneat.util.report
 import kneat.util.reporting.Reporter
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -20,14 +19,21 @@ open class KneatReproductionScheme : ReproductionScheme {
         config: GenomeConfiguration,
         amount: Int,
         reporters: MutableList<Reporter>
-    ) : List<KneatGenome> {
-        return (1L..amount).map {
-            KneatGenome(
+    ) : Map<Long, List<Genome>> {
+        val list = (1L..amount).map {
+            val genome = KneatGenome(
                 id = it,
                 config = config,
                 specifiedReporters = reporters
             )
+
+            genome.mutate()
+            genome.mutate()
+
+            genome
         }
+
+        return mapOf(0L to list)
     }
 
     //TODO: Expensive operations -- Parallelize
@@ -37,43 +43,55 @@ open class KneatReproductionScheme : ReproductionScheme {
         species: List<Species>,
         generation: Long,
         reporters: MutableList<Reporter>
-    ) : List<Genome> {
-        val allFitness = species.flatMap { it.getFitnessValues(generation).map { value -> value.second } }
-        val minFitness: Float = allFitness.minOf { it }
-        val maxFitness: Float = allFitness.maxOf { it }
-        val fitnessRange = max(1f, maxFitness - minFitness)
+    ) : Map<Long, List<Genome>> {
+        var minFitness: Float = Float.MAX_VALUE
+        var maxFitness: Float = Float.MIN_VALUE
+        val meanFitnessMap = mutableMapOf<Long, Float>()
+        val previousSizes = mutableMapOf<Long, Int>()
+        val memberMap = mutableMapOf<Long, List<Genome>>()
+        var maxGenomeId: Long = 0
 
-        val adjustedFitnesses = mutableMapOf<Long, Float>()
+        species.forEach { spec ->
+            previousSizes[spec.key] = spec.members.size
+            memberMap[spec.key] = spec.members
 
-        species.forEach {
-            val meanFitness = Aggregation.Mean.aggregate(it.getFitnessValues(generation).map { value -> value.second })
-            val adjustedFitness = (meanFitness - minFitness) / fitnessRange
-            adjustedFitnesses[it.key] = adjustedFitness
+            val currentValues = mutableListOf<Float>()
+            spec.getFitnessValues(generation).forEach { fit ->
+                val fitness = fit.second
+                if (minFitness > fitness) minFitness = fitness
+                if (maxFitness < fitness) maxFitness = fitness
+                if (maxGenomeId < fit.first) maxGenomeId = fit.first
+                currentValues.add(fitness)
+            }
+            val meanFitness = Aggregation.Mean.aggregate(currentValues)
+            meanFitnessMap[spec.key] = meanFitness
         }
 
-        val averageAdjustedFitness = Aggregation.Mean.aggregate(adjustedFitnesses.values.toList())
-        reporters.report().info("Average adjusted fitness: $averageAdjustedFitness")
+        val fitnessRange = max(1f, maxFitness - minFitness)
+        val adjustedFitnessMap = meanFitnessMap.map {
+            it.key to (it.value - minFitness) / fitnessRange
+        }.toMap()
 
-        val previousSizes = species.map { it.members.size }
         val minSize = config.minSpeciesSize
         val minSpeciesSize = max(minSize, config.elitism)
         val spawnAmounts = computeSpawn(
             config = config,
-            adjustedFitness = adjustedFitnesses.values.toList(),
+            adjustedFitness = adjustedFitnessMap,
             minimumSpeciesSize = minSpeciesSize,
             populationSize = populationSize,
             previousSizes = previousSizes
         )
 
-        val newPopulation: MutableList<Genome> = mutableListOf()
+        val newPopulation = mutableMapOf<Long, List<Genome>>()
+        var genomeIndex = maxGenomeId + 1
 
-        species.zip(spawnAmounts).forEach { (spec, spawn) ->
-            var toSpawn = max(spawn, config.elitism)
-            val members = spec.members.sortedBy { it.getFitness(generation) }
-
+        spawnAmounts.forEach { (key, spawnAmount) ->
+            var toSpawn = max(spawnAmount, config.elitism)
+            val members = (memberMap[key] ?: error("")).sortedBy { it.getFitness(generation) }
             val elites = members.takeLast(config.elitism)
             toSpawn -= elites.size
-            newPopulation.addAll(elites)
+
+            newPopulation[key] = (newPopulation[key] ?: emptyList()) + elites
 
             if (toSpawn > 0) {
                 val reproductionCutoff = max(
@@ -82,8 +100,7 @@ open class KneatReproductionScheme : ReproductionScheme {
                 )
 
                 val fittest = members.takeLast(reproductionCutoff)
-                var genomeIndex = newPopulation.maxOf { it.id } + 1
-                for (i in 1..spawn) {
+                for (i in 1..toSpawn) {
                     val parent1 = fittest.random()
                     val parent2 = fittest.random()
 
@@ -95,7 +112,8 @@ open class KneatReproductionScheme : ReproductionScheme {
                     )
                     child.mutate()
 
-                    newPopulation.add(child)
+                    newPopulation[key] = (newPopulation[key] ?: emptyList()) + child
+
                     ancestors[newId] = Pair(parent1.id, parent2.id)
                 }
             }
@@ -107,15 +125,17 @@ open class KneatReproductionScheme : ReproductionScheme {
     companion object {
         fun computeSpawn(
             config: ReproductionConfiguration,
-            adjustedFitness: List<Float>,
-            previousSizes: List<Int>,
+            adjustedFitness: Map<Long, Float>,
+            previousSizes: Map<Long, Int>,
             populationSize: Int,
             minimumSpeciesSize: Int
-        ) : List<Int> {
-            val adjustedFitnessSum = adjustedFitness.sum()
-            val spawnAmounts = mutableListOf<Int>()
+        ) : Map<Long, Int> {
+            val adjustedFitnessSum = adjustedFitness.values.sum()
+            val spawnAmounts = mutableMapOf<Long, Int>()
+            var totalSpawn = 0
 
-            adjustedFitness.zip(previousSizes).forEach { (fitness, size) ->
+            adjustedFitness.forEach { (key, fitness) ->
+                val size = previousSizes[key] ?: error("")
                 val newSize = if (adjustedFitnessSum > 0) {
                     max(minimumSpeciesSize.toFloat(), fitness / adjustedFitnessSum * populationSize)
                 } else {
@@ -131,15 +151,13 @@ open class KneatReproductionScheme : ReproductionScheme {
                     else -> { size - 1 }
                 }
 
-                spawnAmounts.add(spawn)
+                totalSpawn += spawn
+                spawnAmounts[key] = spawn
             }
 
-            val totalSpawn = spawnAmounts.sum()
             val normalize = populationSize / totalSpawn
 
-            return spawnAmounts.map {
-                max(config.minSpeciesSize, it * normalize)
-            }
+            return spawnAmounts.mapValues { max(minimumSpeciesSize, it.value * normalize) }
         }
     }
 }

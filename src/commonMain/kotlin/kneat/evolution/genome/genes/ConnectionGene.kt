@@ -8,7 +8,6 @@ import kneat.evolution.genome.genes.attributes.FloatAttribute
 import kneat.evolution.genome.genes.attributes.configuration.AttributeConfiguration
 import kneat.evolution.genome.genes.attributes.configuration.WeightConfiguration
 import kneat.evolution.genome.genes.configuration.ConnectionConfiguration
-import kneat.evolution.network.Connection
 import kneat.util.getAs
 import kotlin.math.abs
 
@@ -40,6 +39,9 @@ class ConnectionGene(
         ENABLED_GENE to BooleanAttribute(connectionConfiguration)
     )
 
+    fun getWeight() = managedAttributes.getAs<FloatAttribute>(WEIGHT_GENE).value
+    fun isEnabled() = managedAttributes.getAs<BooleanAttribute>(ENABLED_GENE).value
+
     /**
      * Computes the difference between another [ConnectionGene], [other].
      *
@@ -56,14 +58,9 @@ class ConnectionGene(
      * @return absolute difference between weights + 1 if the enabled states differ
      */
     override fun distance(other: Gene): Float {
-        val myWeight = managedAttributes.getAs<FloatAttribute>(WEIGHT_GENE)
-        val otherWeight = other.managedAttributes.getAs<FloatAttribute>(WEIGHT_GENE)
-
-        val myEnabled = managedAttributes.getAs<BooleanAttribute>(ENABLED_GENE)
-        val otherEnabled = other.managedAttributes.getAs<BooleanAttribute>(ENABLED_GENE)
-
-        var delta = abs(myWeight.value - otherWeight.value)
-        if (myEnabled.value != otherEnabled.value) delta += 1f
+        val connectionGene = other as ConnectionGene
+        var delta = abs(getWeight() - connectionGene.getWeight())
+        if (isEnabled() != connectionGene.isEnabled()) delta += 1f
 
         return delta
     }

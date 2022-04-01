@@ -1,7 +1,6 @@
 package kneat.evolution.genome.genes.attributes.configuration
 
 import kneat.evolution.genome.genes.Gene
-import kneat.evolution.network.Connection
 
 /**
  * Used to configure a [Boolean] value controlled by a [Gene]. Primary use case

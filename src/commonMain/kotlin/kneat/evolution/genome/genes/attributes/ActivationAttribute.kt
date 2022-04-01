@@ -2,7 +2,6 @@ package kneat.evolution.genome.genes.attributes
 
 import kneat.evolution.genome.genes.attributes.configuration.ActivationConfiguration
 import kneat.evolution.network.Activation
-import kneat.evolution.network.Node
 import kotlin.random.Random
 
 /**

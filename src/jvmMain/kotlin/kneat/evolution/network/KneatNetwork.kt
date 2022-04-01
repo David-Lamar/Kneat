@@ -1,98 +1,186 @@
 package kneat.evolution.network
 
 import kneat.evolution.genome.Genome
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import kneat.evolution.genome.genes.ConnectionGene
+import kneat.evolution.genome.genes.NodeGene
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 
-/**
- * An implementation of a [Network]
- */
 class KneatNetwork(
     private val inputKeys: List<Long>,
     private val outputKeys: List<Long>,
-    private val nodes: List<Node>,
-    private val connections: List<Connection>,
+    private val nodes: List<Pair<Long, NodeGene>>,
+    private val connections: List<Pair<Pair<Long, Long>, ConnectionGene>>,
 ) : Network {
 
-    //TODO: This and the Node and Connection scopes should be linked, and the number of threads
-    // should be configurable in the Configuration. When this is changed, please update
-    // the documentation in Network
     private val networkScope: CoroutineScope = CoroutineScope(
         context = SupervisorJob() + Dispatchers.IO
     )
 
-    /**
-     * The flows to be used as the "input" to the neural network
-     */
-    private lateinit var initialFlows: Map<Long, MutableStateFlow<Float>>
+    class Node(
+        private val nodeScope: CoroutineScope,
+        private val gene: NodeGene,
+        private val activationThreshold: Float = 1f, // Percentage of connections to accumulate; rounded down
+        private val refractoryPeriod: Long = 1000000 // Nanoseconds
+    ) {
+        //private val nodeScope: CoroutineScope = CoroutineScope(context + Job())
+        private var connections = AtomicInteger(0)
+        private var connectionThreshold = AtomicInteger(0)
 
-    /**
-     * The flow used to represent the "output" of the neural network
-     */
-    private lateinit var outputFlow: StateFlow<List<Float>>
+        private val collectionCount = AtomicInteger(0)
+        private val collectionList = AtomicReference<List<Float>>(listOf())
+        private val refractoryPeriodStartTime = AtomicLong(0)
 
-    /**
-     * Handles creating the links between all of the nodes and connections
-     */
-    private suspend fun initialize() {
-        val outputs = connections.groupBy { it.id.second }
-        outputs.forEach { (nodeId, connectionsTo) ->
-            val node = nodes.find { it.id == nodeId }
+        private val _nodeFlow = MutableStateFlow(0f)
+        val nodeFlow: StateFlow<Float> = _nodeFlow
 
-            val flow = combine(*connectionsTo.map { it.valueFlow }.toTypedArray()) {
-                it.toList()
-            }
-
-            node?.registerTrigger(flow.stateIn(networkScope))
+        private suspend fun activate(input: List<Float>) {
+            val agg = gene.getAggregation().aggregate(input)
+            val activated = gene.getActivation().activate(gene.getResponse() + agg * gene.getBias())
+            _nodeFlow.emit(activated)
         }
 
-        connections.forEach {
-            val inputFrom = it.id.first
-
-            val flow = if (inputKeys.contains(inputFrom)) {
-                initialFlows[inputFrom] ?: error("")
-            } else {
-                nodes.find { node -> node.id == inputFrom }!!.valueFlow
+        private suspend fun collect(value: Float) {
+            val newCount = collectionCount.incrementAndGet()
+            val collectionList = collectionList.updateAndGet {
+                listOf(*it.toTypedArray(), value)
             }
 
-            it.registerTrigger(flow)
+            if (newCount >= connectionThreshold.get() && canActivate()) {
+                activate(collectionList.toList())
+            }
         }
 
-        outputFlow = combine(*outputKeys.map { id ->
-            nodes.find { it.id == id }!!.valueFlow
-        }.toTypedArray()) {
-            it.toList()
-        }.stateIn(networkScope)
+        private fun canActivate() : Boolean {
+            return System.nanoTime() > (refractoryPeriodStartTime.get() + refractoryPeriod)
+        }
+
+        suspend fun registerTrigger(flow: StateFlow<Float>) {
+            val connections = connections.incrementAndGet()
+            connectionThreshold.set((connections * activationThreshold).toInt())
+
+            try {
+                nodeScope.launch {
+                    flow.collect {
+                        collect(it)
+                    }
+                }
+            } catch (_ : Exception) {
+                // Everything's perfectly alright now... We're fine.. We're all fine here ... Now. Thank you. How are you?
+            }
+        }
     }
 
-    /**
-     * See [Network.activate]
-     */
-    override suspend fun activate(inputs: List<Float>, stabilizationDelay: Long): List<Float> = withContext(networkScope.coroutineContext) {
-        initialFlows = inputKeys.map {
-            it to MutableStateFlow(inputs[inputKeys.indexOf(it)])
+    class Connection(
+        private val connectionScope: CoroutineScope,
+        private val gene: ConnectionGene
+    ) {
+        //private val connectionScope: CoroutineScope = CoroutineScope(context + Job())
+
+        private val _connectionFlow = MutableStateFlow(0f)
+        val connectionFlow: StateFlow<Float> = _connectionFlow
+
+        suspend fun registerTrigger(flow: StateFlow<Float>) {
+            try {
+                connectionScope.launch {
+                    flow.collect {
+                        _connectionFlow.emit(if (gene.isEnabled()) gene.getWeight() * it else 0f)
+                    }
+                }
+            } catch (_: Exception) {
+                // Everything's perfectly alright now... We're fine.. We're all fine here ... Now. Thank you. How are you?
+            }
+
+        }
+    }
+
+    private val inputFlows: Map<Long, List<Connection>>
+    private val outputFlows: Map<Long, StateFlow<Float>>
+
+    init {
+        val connectionFlows: MutableMap<Pair<Long, Long>, Connection> = mutableMapOf()
+        val connectionFlowsTo: MutableMap<Long, MutableList<Connection>> = mutableMapOf()
+        val connectionFlowsFrom: MutableMap<Long, MutableList<Connection>> = mutableMapOf()
+
+        connections.forEach {
+            val to = it.first.second
+            val from = it.first.first
+            val connection = Connection(
+                networkScope,
+                it.second
+            )
+
+            connectionFlows[it.first] = connection
+            connectionFlowsTo[to] = (connectionFlowsTo[to] ?: mutableListOf()).apply { add(connection) }
+            connectionFlowsFrom[from] = (connectionFlowsFrom[from] ?: mutableListOf()).apply { add(connection) }
+        }
+
+        val nodeFlows = nodes.map {
+            it.first to Node(
+                networkScope,
+                it.second
+            )
         }.toMap()
 
-        initialize()
+        // This links all of the nodes and connections together
+        runBlocking {
+            nodeFlows.forEach { (id, node) ->
+                val connectionsIn = connectionFlowsTo[id] ?: emptyList()
+                val connectionsOut = connectionFlowsTo[id] ?: emptyList()
 
-        inputKeys.forEachIndexed { index, key ->
-            initialFlows[key]?.emit(inputs[index])
+                connectionsIn.forEach { conn ->
+                    node.registerTrigger(conn.connectionFlow)
+                }
+
+                connectionsOut.forEach {conn ->
+                    conn.registerTrigger(node.nodeFlow)
+                }
+            }
+
         }
 
-        //TODO: Add some sort of stabilization logic here for recurrent networks
-        if (outputFlow.value.size != outputKeys.size) {
-            return@withContext outputFlow.first { it.size == outputKeys.size }
-        } else {
-            return@withContext outputFlow.value
+        inputFlows = inputKeys.map {
+            it to (connectionFlowsFrom[it] ?: emptyList())
+        }.toMap().toSortedMap()
+
+        outputFlows = outputKeys.map {
+            it to (nodeFlows[it] ?: error("")).nodeFlow
+        }.toMap().toSortedMap()
+    }
+
+    private suspend fun setInputFlows(inputs: List<Float>) {
+        inputFlows.values.forEachIndexed { index, connList ->
+            connList.forEach { testConnection ->
+                testConnection.registerTrigger(MutableStateFlow(inputs[index]))
+            }
         }
+    }
+
+    private suspend fun getOutputs() : List<Float> {
+        return withContext(networkScope.coroutineContext + Job()) {
+            combine(*outputFlows.values.toTypedArray()) {
+                it.toList()
+            }.first {
+                it.size == outputKeys.size && !it.all { value -> value == 0f }
+            }
+        }
+    }
+
+    override suspend fun activate(inputs: List<Float>, stabilizationDelay: Long): List<Float> {
+        setInputFlows(inputs)
+        return getOutputs()
+    }
+
+    fun clean() {
+        networkScope.coroutineContext.cancelChildren()
     }
 
     companion object {
         /**
-         * Creates a KneatNetwork with the provided [genome]
+         * Creates a TestNetwork with the provided [genome]
          */
         fun create(genome: Genome) : Network {
             return KneatNetwork(

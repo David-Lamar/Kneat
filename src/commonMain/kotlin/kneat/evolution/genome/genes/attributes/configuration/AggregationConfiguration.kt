@@ -1,7 +1,6 @@
 package kneat.evolution.genome.genes.attributes.configuration
 
 import kneat.evolution.network.Aggregation
-import kneat.evolution.network.Node
 
 /**
  * Used to configure the [Aggregation] function used by a [Node] via its
@@ -11,10 +10,10 @@ import kneat.evolution.network.Node
  * selected
  * @property mutationRate see [AttributeConfiguration]
  * @property available The list of available [Aggregation] functions that we may pull from for this node to use
- * during mutation. Defaulted to [Aggregation.Mean] as it is a good, general purpose starting point
+ * during mutation. Defaulted to [Aggregation.Sum] as it is a good, general purpose starting point
  */
 data class AggregationConfiguration(
-    override val default: Aggregation? = null,
+    override val default: Aggregation? = Aggregation.Sum,
     override val mutationRate: Float = 0f,
-    val available: List<Aggregation> = listOf(Aggregation.Mean)
+    val available: List<Aggregation> = listOf(Aggregation.Sum)
 ) : AttributeConfiguration<Aggregation>()

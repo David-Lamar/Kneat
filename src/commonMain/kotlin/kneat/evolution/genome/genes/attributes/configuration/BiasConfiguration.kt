@@ -1,6 +1,5 @@
 package kneat.evolution.genome.genes.attributes.configuration
 
-import kneat.evolution.network.Node
 import kneat.util.MultiplierType
 
 /**

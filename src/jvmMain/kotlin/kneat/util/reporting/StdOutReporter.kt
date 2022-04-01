@@ -31,8 +31,8 @@ class StdOutReporter : Reporter {
         println("Speciation complete")
     }
 
-    override fun onEvaluating(genome: Genome) {
-        println("Evaluating genome: ${genome.id}...")
+    override fun onEvaluating(speciesId: Long, genome: Genome) {
+        println("Evaluating genome: $speciesId:${genome.id}...")
     }
 
     override fun onEvaluated() {

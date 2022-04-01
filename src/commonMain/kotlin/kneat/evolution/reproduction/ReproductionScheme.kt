@@ -17,7 +17,7 @@ interface ReproductionScheme {
         config: GenomeConfiguration,
         amount: Int,
         reporters: MutableList<Reporter>
-    ) : List<Genome>
+    ) : Map<Long, List<Genome>>
 
     /**
      * Reproduces a population with an amount of individuals up to the [populationSize] given the existing [species].
@@ -34,5 +34,5 @@ interface ReproductionScheme {
         species: List<Species>,
         generation: Long,
         reporters: MutableList<Reporter>
-    ) : List<Genome>
+    ) : Map<Long, List<Genome>>
 }

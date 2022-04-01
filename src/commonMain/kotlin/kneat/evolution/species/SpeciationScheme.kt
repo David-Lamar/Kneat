@@ -21,7 +21,7 @@ interface SpeciationScheme {
      */
     suspend fun speciate(
         compatibilityThreshold: Float, // TODO: This should be passed in via a config
-        population: List<Genome>,
+        population: Map<Long, List<Genome>>,
         generation: Long,
         fitnessAggregationFunction: Aggregation, // TODO: This should be passed in via a config
         reporters: MutableList<Reporter>,

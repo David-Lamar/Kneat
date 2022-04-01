@@ -4,7 +4,7 @@ import kneat.evolution.configuration.Configuration
 import kneat.evolution.configuration.TerminationCriterion
 import kneat.evolution.genome.EvaluationFunction
 import kneat.evolution.genome.Genome
-import kneat.evolution.network.KneatNetwork
+import kneat.evolution.genome.KneatGenome
 import kneat.evolution.network.Network
 import kneat.evolution.reproduction.KneatReproductionScheme
 import kneat.evolution.reproduction.ReproductionScheme
@@ -13,6 +13,7 @@ import kneat.evolution.species.SpeciationScheme
 import kneat.evolution.species.Species
 import kneat.evolution.stagnation.KneatStagnationScheme
 import kneat.evolution.stagnation.StagnationScheme
+import kneat.util.caching.GenomeCache
 import kneat.util.report
 import kneat.util.reporting.Reporter
 import kotlinx.coroutines.*
@@ -24,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * This is the primary class you should interact with when building a [KneatNetwork].
- * Allows you to create, reproduce, mutate, and select [Genome]s (or essentially the blueprint to build a
+ * Allows you to create, reproduce, mutate, and select [KneatGenome]s (or essentially the blueprint to build a
  * neural network) to quickly find a solution to a problem domain.
  */
 object Pipeline {
@@ -59,7 +60,7 @@ object Pipeline {
     /**
      * The total population of genomes living in the simulation
      */
-    private lateinit var population: List<Genome>
+    private lateinit var population: Map<Long, List<Genome>>
 
     // ********* Configurable items
 
@@ -70,7 +71,7 @@ object Pipeline {
     private lateinit var config: Configuration
 
     /**
-     * The function used to evaluate a [Genome]'s fitness
+     * The function used to evaluate a [KneatGenome]'s fitness
      */
     private lateinit var evaluationFunction: EvaluationFunction
 
@@ -131,7 +132,7 @@ object Pipeline {
 
     /**
      * Sets the [EvaluationFunction] of the pipeline; this will be the sole criteria used to judge your
-     * [Genome]'s fitnesses. This is required to be called; if not, the pipeline will throw an
+     * [KneatGenome]'s fitnesses. This is required to be called; if not, the pipeline will throw an
      * [IllegalStateException].
      */
     fun withEvaluationFunction(evaluationFunction: EvaluationFunction) : Pipeline {
@@ -231,13 +232,11 @@ object Pipeline {
                 is PipelineState.Speciated -> {
                     startNextGeneration()
                 }
-                is PipelineState.Evaluated -> {
-                    collectGenerationMetaData()
-                }
                 is PipelineState.GenerationStarted -> {
                     evaluateCurrentGeneration(evaluationFunction)
                 }
                 is PipelineState.GenerationFinished -> {
+                    reporters.report().info("Current best genome: ${bestGenome?.id} with fitness ${bestGenome?.getFitness()}")
                     reproduce()
                 }
                 is PipelineState.ReproducedPopulation -> {
@@ -430,6 +429,7 @@ object Pipeline {
      */
     private suspend fun startNextGeneration() {
         generation++
+        GenomeCache.clearCache()
         notify(PipelineState.GenerationStarted)
     }
 
@@ -467,50 +467,36 @@ object Pipeline {
     }
 
     /**
-     * Evaluates all [Genome]s in the current population with the [evaluationFunction]
+     * Evaluates all [KneatGenome]s in the current population with the [evaluationFunction]
      */
     private suspend fun evaluateCurrentGeneration(evaluationFunction: EvaluationFunction) {
-        //TODO: This can be parallelized!
-        population.forEach {
-            notify(PipelineState.ExecutionState.Evaluating(it))
-            it.evaluate(evaluationFunction, generation)
-            reporters.report().info("Evaluated genome ${it.key}; fitness was ${it.getFitness(generation)}")
-        }
+        species?.forEach {spec ->
+            spec.members.forEach {
+                notify(PipelineState.ExecutionState.Evaluating(spec.key, it))
+                val fitness = it.evaluate(evaluationFunction, generation)
+                var isSolution = false
 
-        notify(PipelineState.Evaluated)
-    }
+                reporters.report().info("Evaluated genome ${it.id}; fitness was $fitness")
 
-    /**
-     * Collects meta data about the current generation such as the best overall genome we've seen, if a solution
-     * has been found, etc.
-     */
-    private suspend fun collectGenerationMetaData() {
-        notify(PipelineState.ExecutionState.CollectingMetaData)
+                val greatest = bestGenome
+                if (greatest == null || fitness > greatest.getFitness()) {
+                    bestGenome = it
+                }
 
-        population.maxByOrNull { it.getFitness(generation) }?.let {
-            val greatest = bestGenome
-            if (greatest == null || it.getFitness(generation) > greatest.getFitness(generation)) {
-                bestGenome = it
-                //TODO: Report best of the best updated?
+                config.terminationCriterion?.let { criteria ->
+                    if (fitness > criteria.fitnessThreshold) {
+                        isSolution = true
+                    }
+                }
+
+                if (isSolution) {
+                    notify(PipelineState.SolutionFound(it))
+                    return
+                }
             }
         }
 
-        var solutionFound = false
-        config.terminationCriterion?.let {
-            val totalFitness = it.fitnessAggregationFunction.aggregate(population.map { genome -> genome.getFitness(
-                generation
-            ) })
-            if (totalFitness >= it.fitnessThreshold) {
-                solutionFound = true
-                return@let
-            }
-        }
-
-        if (solutionFound) {
-            notify(PipelineState.SolutionFound(bestGenome!!))
-        } else {
-            notify(PipelineState.GenerationFinished)
-        }
+        notify(PipelineState.GenerationFinished)
     }
 
     /**
@@ -519,176 +505,5 @@ object Pipeline {
     private suspend fun notify(state: PipelineState) {
         _state.emit(state)
         stateListeners.forEach { it.notify(state) }
-    }
-
-    /**
-     * The different states that the Pipeline may have. Can be observed via the [state] object or by adding
-     * a state listener via [withStateListener].
-     */
-    sealed class PipelineState {
-
-        /**
-         * The initial state of a pipeline; this just tells us that the pipeline hasn't begun execution yet
-         */
-        object Genesis : PipelineState()
-
-        /**
-         * States that fall in the category of an "execution", or, a longer running task that should not be
-         * interrupted
-         */
-        sealed class ExecutionState : PipelineState() {
-
-            /**
-             * Signals that we're creating the very first population to be used in the simulation
-             */
-            object CreatingInitialPopulation : ExecutionState()
-
-            /**
-             * Signals that we're speciating the current population
-             */
-            object Speciating : ExecutionState()
-
-            /**
-             * Signals that we're evaluating a genome in the population
-             *
-             * @property genome The [Genome] currently being evaluated
-             */
-            class Evaluating(val genome: Genome) : ExecutionState()
-
-            /**
-             * Signals that we're collecting meta data about the current generation
-             */
-            object CollectingMetaData : ExecutionState()
-
-            /**
-             * Signals that we're culling the current population
-             */
-            object Culling : ExecutionState()
-
-            /**
-             * Signals that we're reproducing individuals for the next generation
-             */
-            object ReproducingPopulation : ExecutionState()
-
-            /**
-             * Signals that the simulation has been paused
-             *
-             * @property resumeState The state that the pipeline will go to if the user resumes
-             */
-            class Paused(val resumeState: PipelineState) : ExecutionState()
-
-            /**
-             * Signals that the simulation is being loaded from a file
-             */
-            object Loading : ExecutionState()
-
-            /**
-             * Signals that the simulation is being saved to a file
-             *
-             * @property resumeState The state that the pipeline will go to if the user resumes
-             */
-            class Saving(val resumeState: PipelineState) : ExecutionState() //TODO: Resume state may not be needed in this state
-        }
-
-        /**
-         * Signals that we're finished creating the initial population
-         */
-        object InitialPopulationCreated : PipelineState()
-
-        /**
-         * Signals that we've finished speciating the population
-         */
-        object Speciated : PipelineState()
-
-        /**
-         * Signals that we've evaluated all genomes in the current generation
-         */
-        object Evaluated : PipelineState()
-
-        /**
-         * Signals that we've finished everything related to the current generation
-         */
-        object GenerationFinished : PipelineState()
-
-        /**
-         * Signals that we've started a new generation
-         */
-        object GenerationStarted : PipelineState()
-
-        /**
-         * Signals that we've finished culling the current population
-         */
-        object Culled : PipelineState()
-
-        /**
-         * Signals that we've finished reproducing individuals for the next generation
-         */
-        object ReproducedPopulation : PipelineState()
-
-        /**
-         * Signals that we've finished saving the simulation to a file
-         */
-        class Saved(val resumeState: PipelineState) : PipelineState()
-
-        /**
-         * Signals that all individuals have died out
-         */
-        object Extinction : PipelineState()
-
-        /**
-         * Signals that a solution to the problem domain has been found according to the threshold
-         * configured in [Configuration].
-         *
-         * @property solution The [Genome] with the highest fitness
-         */
-        data class SolutionFound(val solution: Genome) : PipelineState()
-    }
-
-    /**
-     * Callback to receive different [PipelineState] updates; these functions have a 1-1 mapping
-     * to the different [PipelineState]s.
-     */
-    interface PipelineStateCallback {
-        fun onCreatingInitialPopulation()
-        fun onSpeciating()
-        fun onSpeciated()
-        fun onEvaluating(genome: Genome)
-        fun onEvaluated()
-        fun onGenerationStarted()
-        fun onGenerationFinished()
-        fun onCulling()
-        fun onCulled()
-        fun onReproducing()
-        fun onReproduced()
-        fun onExtinction()
-        fun onSolutionFound(fittest: Genome?)
-        fun onPaused(willResumeState: PipelineState)
-        fun onSaving(wilLResumeState: PipelineState)
-        fun onLoading()
-
-        /**
-         * Helper function to notify a [PipelineStateCallback] when a specific [PipelineState] has been
-         * emitted
-         */
-        fun notify(state: PipelineState) {
-            when (state) {
-                is PipelineState.ExecutionState.CreatingInitialPopulation -> onCreatingInitialPopulation()
-                is PipelineState.ExecutionState.Speciating -> onSpeciating()
-                is PipelineState.Speciated -> onSpeciated()
-                is PipelineState.ExecutionState.Evaluating -> onEvaluating(state.genome)
-                is PipelineState.Evaluated -> onEvaluated()
-                is PipelineState.GenerationStarted -> onGenerationStarted()
-                is PipelineState.GenerationFinished -> onGenerationFinished()
-                is PipelineState.ExecutionState.Culling -> onCulling()
-                is PipelineState.Culled -> onCulled()
-                is PipelineState.ExecutionState.ReproducingPopulation -> onReproducing()
-                is PipelineState.ReproducedPopulation -> onReproduced()
-                is PipelineState.Extinction -> onExtinction()
-                is PipelineState.SolutionFound -> onSolutionFound(state.solution)
-                is PipelineState.ExecutionState.Paused -> onPaused(state.resumeState)
-                is PipelineState.ExecutionState.Saving -> onSaving(state.resumeState)
-                is PipelineState.ExecutionState.Loading -> onLoading()
-            }
-        }
     }
 }

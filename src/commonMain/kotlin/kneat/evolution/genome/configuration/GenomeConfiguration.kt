@@ -18,8 +18,8 @@ import kneat.evolution.genome.genes.configuration.NodeConfiguration
  * @property structureConfiguration The [structureConfiguration] for the genome
  */
 data class GenomeConfiguration(
-    val activationConfig: ActivationConfiguration,
-    val aggregationConfiguration: AggregationConfiguration,
+    val activationConfig: ActivationConfiguration = ActivationConfiguration(),
+    val aggregationConfiguration: AggregationConfiguration = AggregationConfiguration(),
     val biasConfiguration: BiasConfiguration,
     val responseConfiguration: ResponseConfiguration = ResponseConfiguration(),
     val weightConfiguration: WeightConfiguration,

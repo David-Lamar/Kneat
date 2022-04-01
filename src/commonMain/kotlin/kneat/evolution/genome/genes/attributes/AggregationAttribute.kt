@@ -2,7 +2,6 @@ package kneat.evolution.genome.genes.attributes
 
 import kneat.evolution.genome.genes.attributes.configuration.AggregationConfiguration
 import kneat.evolution.network.Aggregation
-import kneat.evolution.network.Node
 
 import kotlin.random.Random
 

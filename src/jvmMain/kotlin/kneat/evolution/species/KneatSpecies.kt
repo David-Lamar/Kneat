@@ -68,7 +68,7 @@ class KneatSpecies(
 
     /**
      * Returns all of the fitness values for all of the individuals in the species; each fitness is indexed via
-     * the [Genome.key] for the [Genome] which it's associated with
+     * the [KneatGenome.id] for the [KneatGenome] which it's associated with
      */
     override fun getFitnessValues(generation: Long) : List<Pair<Long, Float>> {
         return members.map { it.id to it.getFitness(generation) }

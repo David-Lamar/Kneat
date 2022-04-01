@@ -24,7 +24,7 @@ fun List<Reporter>.report() : Reporter {
         override fun onCreatingInitialPopulation() = list.forEach { it.onCreatingInitialPopulation() }
         override fun onSpeciating() = list.forEach { it.onSpeciating() }
         override fun onSpeciated() = list.forEach { it.onSpeciated()}
-        override fun onEvaluating(genome: Genome) = list.forEach { it.onEvaluating(genome) }
+        override fun onEvaluating(speciesId: Long, genome: Genome) = list.forEach { it.onEvaluating(speciesId, genome) }
         override fun onEvaluated() = list.forEach { it.onEvaluated() }
         override fun onGenerationStarted() = list.forEach { it.onGenerationStarted() }
         override fun onGenerationFinished() = list.forEach { it.onGenerationFinished()}
